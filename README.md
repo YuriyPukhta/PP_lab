@@ -9,4 +9,4 @@ python_version = "3.7.8"
 
 URL = /api/v1/hello-world-8
 
-project created by Puhta Yuriy
+project created by Pukhta Yuriy
