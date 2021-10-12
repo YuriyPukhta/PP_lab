@@ -8,7 +8,7 @@ externalDocs:
   url: https://github.com/YuriyPukhta/PP_lab
 tags:
   - name: tickets
-    description: operations with students
+    description: operations with tickets
   - name: user
     description: operations with user
   - name: auth
