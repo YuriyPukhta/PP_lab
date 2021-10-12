@@ -9,6 +9,8 @@ externalDocs:
 tags:
   - name: tickets
     description: operations with tickets
+  - name: buy
+    description: operations with buy tickets
   - name: user
     description: operations with user
   - name: auth
@@ -58,6 +60,35 @@ paths:
       - basicAuth: []
       
   /tickets/{ticketsId}:
+    get:
+      tags:
+      - tickets
+      summary: Get tickets by id
+      description: getting of all tickets
+      operationId: gettickets
+      parameters:
+      - name: ticketsId
+        in: path
+        required: true
+        description: 'tickets id'
+        schema:
+          type: integer
+          format: int64
+      responses:
+        200:
+          description: "successful operation.tickets is retrieved"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/tickets'
+        401:
+          $ref: '#/components/responses/UnauthorizedError'          
+        404:
+          description: a student with this id was not found
+      security:
+      - basicAuth: []      
+
+
     put:
       tags:
       - tickets
@@ -121,6 +152,143 @@ paths:
       security:
       - basicAuth: []   
           
+  /buy:
+   
+    get:
+      tags:
+      - buy
+      summary: Get all buy
+      description: getting of all buy
+      operationId: getbuys
+      responses:
+        200:
+          description: "successful operation. all buy are returned"
+          content:
+            application/json:
+              schema:
+                type: "array"
+                items:
+                  $ref: '#/components/schemas/buy'
+        401:
+          $ref: '#/components/responses/UnauthorizedError' 
+          
+    post:
+      tags:
+      - buy
+      summary: Create new buy
+      description: creating a new buy
+      operationId: createbuy
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/buy'
+      responses:
+        200:
+          description: "successful operation. buy is created"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/buy'
+        401:
+          $ref: '#/components/responses/UnauthorizedError'     
+      security:
+      - basicAuth: []
+      
+  /buy/{buyId}:
+
+    get:
+      tags:
+      - buy
+      summary: Get buy by id
+      description: getting of all buy
+      operationId: getbuy
+      parameters:
+      - name: buyId
+        in: path
+        required: true
+        description: 'buy id'
+        schema:
+          type: integer
+          format: int64
+      responses:
+        200:
+          description: "successful operation.buy is retrieved"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/buy'
+        401:
+          $ref: '#/components/responses/UnauthorizedError'          
+        404:
+          description: a student with this id was not found
+      security:
+      - basicAuth: []      
+
+
+    put:
+      tags:
+      - buy
+      summary: Update buy
+      description: updating buy owned by current user
+      operationId: updatebuy
+      parameters:
+      - name: buyId
+        in: path
+        required: true
+        description: 'the buy id that needs to be updated'
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        description: 'buy object updated'
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/buy'
+        required: true
+      responses:
+        200:
+          description:  "successful operation. Tickets is updated"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/buy'
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+        403:
+          description: It is forbidden to delete not your buy.
+        404:
+          description: buy is not found.
+      security:
+      - basicAuth: []       
+          
+    delete:
+      tags:
+      - buy
+      summary: Delete buy
+      description: deleting existing buy owned by current user
+      operationId: deletebuy
+      parameters:
+      - name: buyId
+        in: path
+        required: true
+        description: 'buy id that needs to be updated'
+        schema:
+          type: integer
+          format: int64
+      responses:
+        200:
+          description:  "successful operation. buy is deleted"
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+        403:
+          description: It is forbidden to delete not your buy
+        404:
+          description: buy was not found
+      security:
+      - basicAuth: []   
+          
 
       
   /auth/login:
@@ -162,6 +330,24 @@ paths:
       security:
         - basicAuth: []
   /user:
+  
+    get:
+      tags:
+      - user
+      summary: Get all users
+      description: getting of all users
+      operationId: getusers
+      responses:
+        200:
+          description: "successful operation. all tickets are returned"
+          content:
+            application/json:
+              schema:
+                type: "array"
+                items:
+                  $ref: '#/components/schemas/tickets'
+        401:
+          $ref: '#/components/responses/UnauthorizedError'   
     post:
       tags:
         - user
@@ -182,6 +368,99 @@ paths:
                 $ref: '#/components/schemas/User'
         '400':
           description: User with such username already exists
+  /user/{userId}:
+    get:
+      tags:
+      - user
+      summary: Get user by id
+      description: getting of all user
+      operationId: getuser
+      parameters:
+      - name: userId
+        in: path
+        required: true
+        description: 'user id'
+        schema:
+          type: integer
+          format: int64
+      responses:
+        200:
+          description: "successful operation.user is retrieved"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        401:
+          $ref: '#/components/responses/UnauthorizedError'          
+        404:
+          description: a student with this id was not found
+      security:
+      - basicAuth: []      
+
+     
+    put:
+      tags:
+      - user
+      summary: Update user
+      description: updating user owned by current user
+      operationId: updateuser
+      parameters:
+      - name: userId
+        in: path
+        required: true
+        description: 'the tickets id that needs to be updated'
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        description: 'tickets object updated'
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/tickets'
+        required: true
+      responses:
+        200:
+          description:  "successful operation. Tickets is updated"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/tickets'
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+        403:
+          description: It is forbidden to delete not your tickets.
+        404:
+          description: tickets is not found.
+      security:
+      - basicAuth: []       
+          
+    delete:
+      tags:
+      - user
+      summary: Delete user
+      description: deleting existing user owned by current user
+      operationId: deleteuser
+      parameters:
+      - name: userId
+        in: path
+        required: true
+        description: 'tickets id that needs to be updated'
+        schema:
+          type: integer
+          format: int64
+      responses:
+        200:
+          description:  "successful operation. tickets is deleted"
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+        403:
+          description: It is forbidden to delete not your user
+        404:
+          description: user was not found
+      security:
+      - basicAuth: []   
+      
 components:
   schemas:
     User:
@@ -190,6 +469,7 @@ components:
         - username
         - password
         - name
+
       type: object
       properties:
         id:
@@ -202,6 +482,7 @@ components:
         password:
           type: string
           format: password
+
     tickets:
       required:
         - id
@@ -227,7 +508,23 @@ components:
           type: string
         reservation:
           type: string
-
+        buy:
+          type: string
+    buy:
+      required:
+        - id
+        - username
+        - idticket
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        idticket:
+          type: integer
+          format: int64
   securitySchemes:
     basicAuth:
       type: http
