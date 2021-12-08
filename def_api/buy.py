@@ -1,9 +1,11 @@
-from server import app , db
+from server import app, db
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError, NoReferenceError,\
     NoReferencedColumnError, NoReferencedTableError, ArgumentError, OperationalError, DataError
 from flask import request, jsonify
 from schemas import Users_Schema, User_Schema, Buys_Schema, Buy_Schema, Tickets_Schema,Ticket_Schema
-from models import User, Tickets, Buy
+from models import *
+from flask_jwt_extended import jwt_required, get_jwt_identity
+
 from sqlalchemy.orm.exc import NoResultFound
 
 ##################################
@@ -20,13 +22,16 @@ def buy_get():
 
     else:
         return (Buys_Schema.dump(buy),200)
-
+@jwt_required()
 def buy_post(json):
-    # User
     id = json.get('id')
     name = json.get('name')
     idticket = json.get('idticket')
     iduser = json.get('iduser')
+    logged_in_user_id = get_jwt_identity()
+    users = db.session.query(User).filter(User.id == iduser).first()
+    if users.id != logged_in_user_id:
+        return {'message': 'Access denied'}, 403
     #Buy.query.get(id)
     if not name or idticket is None or iduser is None or id is None:
         return ("Not none value", 400)
@@ -58,10 +63,14 @@ def buy_post(json):
     else:
         return ("only single ticket", 400)
 
-
+@jwt_required()
 def buy_get_id(id):
+    logged_in_user_id = get_jwt_identity()
+    buys = db.session.query(Buy).filter(Buy.idticket == id).first()
+    if buys.iduser != logged_in_user_id:
+        return {'message': 'Access denied'}, 403
     try:
-       buy = Buy.query.get(id)
+       buy = db.session.query(Buy).filter_by(id=id ).first()
        #print(buy.idticket)
        if not buy:
            db.session.rollback()
@@ -73,39 +82,23 @@ def buy_get_id(id):
     else:
         return (Buy_Schema.dump(buy),200)
 
+@jwt_required()
 def buy_put_id(id, json):
-    '''
-    try:
-        buy = Buy.query.get(id)
-        # print(buy.idticket)
-    except NoResultFound:
-        db.session.rollback()
-        return ("Buy with such id dosent exists", 404)
-    buy.name = json.get('name')
-    buy.idticket = json.get('idticket')
-    db.session.commit()''''''
-    buy = Buy.query.get(id)
-    buy.name = json.get('name')
-    print(json.get('name'), buy.name)
-    buy.idticket = json.get('idticket')
-    db.session.commit()
-    print(Buy_Schema.dump(buy))
-    return (Buy_Schema.dump(buy), 200)'''
+    iduser = json.get('iduser')
+    logged_in_user_id = get_jwt_identity()
+    users = db.session.query(User).filter(User.id == iduser).first()
+    if users.id != logged_in_user_id:
+        return {'message': 'Access denied'}, 403
     if id != json.get('id'):
         return buy_post(json)
 
     try:
-        buy = Buy.query.get(id)
+        buy = db.session.query(Buy).filter_by(id=id).first()
         # print(buy.idticket)
         if not buy:
             db.session.rollback()
             return ({"message": "A buy with this id was not found"}, 404)
 
-        if Buy.query.filter(Buy.idticket == json.get('idticket')).first() and buy.iduser != json.get('iduser'):
-            return ("only single tickets", 400)
-
-        if Buy.query.filter(Buy.idticket == json.get('idticket')).first().idticket != buy.idticket:
-            return ("booked", 400)
         #if buy.iduser != json.get('iduser'):
             #return ("you cant do it", 401)
         buy.name = json.get('name')
@@ -133,17 +126,20 @@ def buy_put_id(id, json):
 
     else:
             return (Buy_Schema.dump(buy), 200)
-
+@jwt_required()
 def buy_delet_id(id): #check
-
+    logged_in_user_id = get_jwt_identity()
+    buys = db.session.query(Buy).filter(Buy.idticket == id).first()
+    if buys.iduser != logged_in_user_id:
+        return {'message': 'Access denied'}, 403
     try:
-        buy = Buy.query.get(id)
-        # print(buy.idticket)
-        if not buy:
-            db.session.rollback()
-            return ("A buy with this id was not found", 404)
-        db.session.delete(buy)
-        db.session.commit()
+       buy = db.session.query(Buy).filter_by(id=id ).first()
+    # print(buy.idticket)
+       if not buy:
+          return ("A buy with this id was not found", 404)
+       db.session.delete(buy)
+       db.session.commit()
+       return {"message":"ok"},200
     except SQLAlchemyError as e:
         print(type(e))
         db.session.rollback()

@@ -1,5 +1,5 @@
 
-from models import User, Tickets, Buy
+from models import *
 from flask import Flask
 from flask_marshmallow import Marshmallow
 from server import  ma
@@ -8,8 +8,6 @@ class UserSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         # Fields to expose
         model = User
-
-
 Users_Schema = UserSchema(many=True)
 User_Schema = UserSchema()
 
@@ -37,5 +35,9 @@ class BuySchema(ma.SQLAlchemyAutoSchema):
 Buys_Schema = BuySchema(many=True)
 Buy_Schema = BuySchema()
 
-#user_schema = UserSchema()
-#users_schema = UserSchema(many=True)
+class TokenBlockListSchema(ma.SQLAlchemyAutoSchema):
+    class Meta:
+        model = Tickets
+
+TokenBlockList_Schema = TokenBlockListSchema(many=True)
+TokenBlockList_Schema = TokenBlockListSchema()

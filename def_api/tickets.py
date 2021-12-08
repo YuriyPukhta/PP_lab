@@ -1,9 +1,11 @@
-from server import app , db
+from server import app, db
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError, NoReferenceError, NoReferencedColumnError, \
     NoReferencedTableError, ArgumentError, OperationalError, DataError
+from flask_jwt_extended import jwt_required, get_jwt_identity
 from flask import request, jsonify
 from schemas import Users_Schema, User_Schema, Buys_Schema, Buy_Schema, Tickets_Schema,Ticket_Schema
-from models import User, Tickets, Buy
+from models import *
+
 ##################################
 #tickets
 ##################################
@@ -15,9 +17,8 @@ def tickets_get():
         return ("Authentication information is missing or invalid", 401)
     else:
         return (Tickets_Schema.dump(tickets),200)
-
+@jwt_required()
 def tickets_post(json):
-    # User
     id = json.get('id')
     row = json.get('row')
     place = json.get('place')
@@ -25,20 +26,21 @@ def tickets_post(json):
     datatime = json.get('datatime')
     reservation = json.get('reservation')
     buy = json.get('buy')
-    if json.get('id') is None or json.get('row') is None or json.get('place') is None or not json.get('namefilm') or not json.get('datatime') or  not json.get('reservation') or not json.get('buy'):
+    id_user_create = json.get('id_user_create')
+    if User.rang == 'Admin':
+        return {"message": "This user is not an Admin."}, 406
+    admin = db.session.query(User).filter(User.id == id_user_create).first()
+    if admin.rang != 'Admin':
+        return {'message': 'Access denied'}, 403
+    if json.get('id') is None or json.get('row') is None or json.get('place') \
+            is None or not json.get('namefilm') or not json.get('datatime') \
+            or not json.get('reservation') or not json.get('buy'):
         return ("Not none value", 400)
 
-    '''
-    Tickets_add = Tickets(id=id, row=row, place=place, namefilm=namefilm,
-                       datatime=datatime, reservation=reservation, buy=buy)
-    db.session.add(Tickets_add)
-    db.session.commit()
-    db.session.rollback()
-    return (Ticket_Schema.dump(Tickets_add),200)
-    '''
+
     try:
         Tickets_add = Tickets(id=id, row=row, place = place, namefilm = namefilm,
-                        datatime = datatime, reservation = reservation, buy = buy)
+                        datatime = datatime, reservation = reservation, buy = buy,id_user_create =id_user_create)
         db.session.add(Tickets_add)
         db.session.commit()
     except IntegrityError:
@@ -59,9 +61,12 @@ def tickets_post(json):
         return ":(((", 401
     else:
         return (Ticket_Schema.dump(Tickets_add),200)
-
+@jwt_required()
 def tickets_get_id(id):
-    # User
+    logged_in_user_id = get_jwt_identity()
+    tickets = db.session.query(Tickets).filter(Tickets.id == id).first()
+    if tickets.id_user_create != logged_in_user_id:
+        return {'message': 'Access denied'}, 403
     try:
         Ticket = Tickets.query.get(id)
         # print(buy.idticket)
@@ -75,41 +80,20 @@ def tickets_get_id(id):
     else:
         return (Ticket_Schema.dump(Ticket),200)
 
+@jwt_required()
 def tickets_put_id(id, json):
-    '''Ticket = Tickets.query.get(id)
-    Ticket.row = json.get('row')
-    Ticket.place = json.get('place')
-    Ticket.namefilm = json.get('namefilm')
-    Ticket.datatime = json.get('datatime')
-    Ticket.reservation = json.get('reservation')
-    Ticket.buy = json.get('buy')
-
-    db.session.commit()
-
-    return (Ticket_Schema.dump(Ticket), 200)
-
-    ''''''
-    try:
-        Ticket = Tickets.query.get(id)
-    except NoResultFound:
-        db.session.rollback()
-        return ("A ticket with this id was not found", 404)
-    Ticket.row = json.get('row')
-    Ticket.place = json.get('place')
-    Ticket.namefilm = json.get('namefilm')
-    Ticket.datatime = json.get('datatime')
-    Ticket.reservation = json.get('reservation')
-    Ticket.buy = json.get('buy')
-
-    db.session.commit()
-    return (Ticket_Schema.dump(Ticket), 200)'''
+    id_user_create = json.get('id_user_create')
+    admin = db.session.query(User).filter(User.id == id_user_create).first()
+    if admin.rang != 'Admin':
+        return {'message': 'Access denied'}, 403
     if id != json.get('id'):
         return tickets_post(json)
     if json.get('row') is None or json.get('place') is None or not json.get(
-            'namefilm') or not json.get('datatime') or not json.get('reservation') or not json.get('buy'):
+            'namefilm') or not json.get('datatime') or not json.get('reservation') or not json.get('buy') \
+            or not json.get('id_user_create'):
         return ("Not none value", 400)
     try:
-        Ticket = Tickets.query.get(id)
+        Ticket = db.session.query(Tickets).filter_by(id=id ).first()
         # print(buy.idticket)
         if not Ticket:
             db.session.rollback()
@@ -120,6 +104,7 @@ def tickets_put_id(id, json):
         Ticket.datatime = json.get('datatime')
         Ticket.reservation = json.get('reservation')
         Ticket.buy = json.get('buy')
+        Ticket.id_user_create = json.get('id_user_create')
 
         db.session.commit()
 
@@ -137,15 +122,19 @@ def tickets_put_id(id, json):
     else:
         return (Ticket_Schema.dump(Ticket), 200)
 
-
+@jwt_required()
 def tickets_delet_id(id): #check
-    Ticket = Tickets.query.get(id)
+    logged_in_user_id = get_jwt_identity()
+    tickets = db.session.query(Tickets).filter(Tickets.id == id).first()
+    if tickets.id_user_create != logged_in_user_id:
+        return {'message': 'Access denied'}, 403
+    Ticket = db.session.query(Tickets).filter_by(id=id ).first()
     # print(buy.idticket)
     if not Ticket:
         db.session.rollback()
         return ("A ticket with this id was not found", 404)
     try:
-        Tickets.query.filter_by(id=id).delete()
+        db.session.query(Tickets).filter_by(id=id ).delete()
         db.session.commit()
     except SQLAlchemyError as e:
         print(type(e))
